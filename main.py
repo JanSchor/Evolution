@@ -215,6 +215,53 @@ def step():
     currStep += 1
     updateGrid()
 
+def showGenes(sender, app_data, user_data):
+    if dpg.does_item_exist("nGenes"):
+        dpg.delete_item("nGenes")
+
+    #Encrypted genomes
+    encryptedGenomes = []
+    for gene in user_data.genes:
+        encryptedGenomes.append(readConnection(gene))
+
+    #NODE EDITOR
+    with dpg.node_editor(label="Genes", tag="nGenes", parent="wGenesGraph", width=500, height=500):
+        #Create nodes for each gene
+        for i, gene in enumerate(encryptedGenomes):
+            print(encryptedGenomes[0])
+            #First neuron
+            with dpg.node(label=gene[0], pos=(0, 0)):
+                with dpg.node_attribute(label="Neuron",attribute_type=dpg.mvNode_Attr_Output,tag="nOutput"+str(i)):
+                    dpg.add_text("Id "+ str(gene[1]))
+                    dpg.add_text("Weight "+ str(gene[4]))
+            #Second neuron
+            with dpg.node(label=encryptedGenomes[0][2], pos=(120, 100)):
+                with dpg.node_attribute(label="Neuron",attribute_type=dpg.mvNode_Attr_Input,tag="nInput"+str(i)):
+                    dpg.add_text("Id "+ str(gene[3]))
+                    dpg.add_text("Weight "+ str(gene[4]))
+            #Link
+            dpg.add_node_link("nOutput"+str(i), "nInput"+str(i))
+
+
+def genesGraph():
+
+    #Creature Select window
+    def creatureSelect():
+        if dpg.does_item_exist("wCreatureSelect"):
+            dpg.delete_item("wCreatureSelect")
+        else:
+            gGraphPos = dpg.get_item_pos("wGenesGraph")
+            with dpg.window(label='Creature Select', width=600, height=1000, pos=gGraphPos, tag="wCreatureSelect", on_close=creatureSelect):
+                for i in creatures:
+                    dpg.add_button(label="Creature " + str(i.cId), callback=showGenes, tag="bCreature" + str(i.cId), user_data=i)
+
+    #Node window
+    with dpg.window(label='Genes Graph', width=1000, height=1000, pos=(1000, 0), tag="wGenesGraph"):
+
+        #Menu bar
+        with dpg.menu_bar():
+            dpg.add_button(label="Creature Select", callback=creatureSelect, tag="bCreatureSelect")
+
 # sensory neurons functions
 def randomSensory(*args):
     return random.random()
@@ -379,6 +426,7 @@ with dpg.window(label='Grid', width=1000, height=1000) as gridWin:
     dpg.add_button(label="50", callback=gen50, pos=(200, 50))
     showIdsCb = dpg.add_checkbox(label="Show ids", default_value=False, pos=(300, 50))
     dpg.add_button(label="Brains", callback=generateBrains, pos=(400, 50))
+    dpg.add_button(label="Genes Graph", callback=genesGraph, pos=(500, 50))
 
         
 
