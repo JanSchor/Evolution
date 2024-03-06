@@ -135,7 +135,7 @@ def nextGeneration():
             cre.genes.remove(gene)
             newGene = gene[:index] + generateRandomHex(1) + gene[index+1:]
             cre.genes.append(newGene)
-        creatures.append(Creature(pos, genes, defaultAction, i + len(alive)))
+        creatures.append(Creature(pos, genes, defaultAction, i + len(alive), len(internalList)))
     grid.clear()
     for i in range(gridY):
         column = []
@@ -166,60 +166,45 @@ def step():
         return
     for creature in creatures:
         connections = []
-        print()
-        print(creature.cId)
+        #print()
+        #print(creature.cId)
+        toInternal = []
+        toAction = []
         for connection in creature.genes:
             sourceType, sourceId, sinkType, sinkId, weight = readConnection(connection)
-            print(sourceType, sourceId, sinkType, sinkId, weight)
-            if sourceType == "sensory":
-                value = sensoryList[sourceId].computation(creature) * weight
-            elif sourceType == "internal":
-                value = creature.internalNeurons[sourceId] * weight
-
-            
-            
-
-
-            if sourceType == "sensory":
-                source = sensoryList[sourceId]
-                value = source.computation(creature) * weight
-            elif sourceType == "internal":
-                source = internalList[sourceId]
-                inputs = []
-                for internalConnections in creature.genes:
-                    sourceType, sourceId, sinkType, sinkId, weight = readConnection(internalConnections)
-                    if sourceType == "sensory":
-                        source2 = sensoryList[sourceId]
-                        inputs.append(source2.computation(creature) * weight)
-                    elif sourceType == "internal":
-                        if sourceId == 1:
-                            inputs.append(creature.internal1 * weight)
-                        elif sourceId == 2:
-                            inputs.append(creature.internal2 * weight)
-                        elif sourceId == 3:
-                            inputs.append(creature.internal3 * weight)
-                        
-                value = source.computation(inputs) * weight
-
-            
-            if sinkType == "internal": # fix internals
-                if sinkId == 1:
-                    creature.internal1 = value
-                elif sinkId == 2:
-                    creature.internal2 = value
-                elif sinkId == 3:
-                    creature.internal3 = value
+            #print(sourceType, sourceId, sinkType, sinkId, weight)
+            if sinkType == "internal":
+                toInternal.append((sourceType, sourceId, sinkType, sinkId, weight))
             elif sinkType == "action":
-                if value > 1:
-                    value = 1
-                if value > 0:
-                    connections.append((value, sinkId))
+                toAction.append((sourceType, sourceId, sinkType, sinkId, weight))
+        internalValues = {}
+        for sinkInternal in toInternal:
+            if sinkInternal[0] == "sensory": # source type
+                value = sensoryList[sinkInternal[1]].computation(creature) * sinkInternal[4]
+            elif sinkInternal[0] == "internal":
+                value = creature.internalNeurons[sinkInternal[1]] * sinkInternal[4]
+            if sinkInternal[3] in internalValues.keys():
+                internalValues[sinkInternal[3]] += value
+            else:
+                internalValues[sinkInternal[3]] = value
+        for neuronKey in internalValues.keys():
+            creature.internalNeurons[neuronKey] = math.tanh(internalValues[neuronKey])
+        actionValues = {}
+        for sinkAction in toAction:
+            if sinkAction[0] == "sensory":
+                value = sensoryList[sinkAction[1]].computation(creature) * sinkAction[4]
+            elif sinkAction[0] == "internal":
+                value = creature.internalNeurons[sinkAction[1]] * sinkAction[4]
+            if sinkAction[3] in actionValues.keys():
+                actionValues[sinkAction[3]] += value
+            else:
+                actionValues[sinkAction[3]] = value
+        
         action = (0, 0)
-        if creature.cId == 0:
-            print(connections)
-        for i in connections:
-            if i[0] > action[0]:
-                action = i
+        for actionKey in actionValues.keys():
+            actionValues[actionKey] = math.tanh(actionValues[actionKey])
+            if actionValues[actionKey] > action[0]:
+                action = (actionValues[actionKey], actionKey)
         creature.stepAction = actionList[action[1]].computation
 
     for creature in creatures:
@@ -336,9 +321,9 @@ global gridX, gridY, numCreatures, numOfConnections, creatures, grid, steps, cur
 gridX = 45
 gridY = 45
 numCreatures = 100
-numOfConnections = 3
+numOfConnections = 10
 creatures = []
-mutation = 300
+mutation = 50
 
 if gridX * gridY < numCreatures:
     print("Too many creatures for the grid")
@@ -350,9 +335,9 @@ currStep = 0
 genNum = 1
 
 global aliveStartX, aliveStartY, aliveEndX, aliveEndY
-aliveStartX = 0
-aliveStartY = 0
-aliveEndX = 200
+aliveStartX = 600
+aliveStartY = 600
+aliveEndX = 900
 aliveEndY = 900
 
 for i in range(gridY):
@@ -369,7 +354,7 @@ for i in range(numCreatures):
     pos = [random.randrange(0, gridX), random.randrange(0, gridY)]
     while pos in positions:
         pos = [random.randrange(0, gridX), random.randrange(0, gridY)]
-    creatures.append(Creature(pos, genes, defaultAction, i))
+    creatures.append(Creature(pos, genes, defaultAction, i, len(internalList)))
 
 for i in creatures:
     grid[i.pos[1]][i.pos[0]] = i
