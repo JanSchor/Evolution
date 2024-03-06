@@ -20,16 +20,19 @@ def displayGrid():
 
 def updateGrid():
     global simArea
-    if dpg.does_item_exist(simArea):
-        dpg.delete_item(simArea)
-    with dpg.drawlist(width=920, height=920, tag="simArea", parent=gridWin) as simArea:
-        dpg.draw_rectangle((10, 10), (910, 910), color=(255, 255, 255))
-        dpg.draw_rectangle((aliveStartX+10, aliveStartY+10), (aliveEndX+10, aliveEndY+10), color=(0, 255, 0), fill=(0, 255, 0, 20), parent=simArea)
-        for i, line in enumerate(grid):
-            for j, index in enumerate(line):
-                if grid[i][j] != 0:
-                    dpg.draw_circle((20 + j * 20, 20 + i * 20), 10, color=(0, 0, 0, 0), fill=index.color, parent=simArea)
-        showIds()
+    if not skip:
+        if dpg.does_item_exist(simArea):
+            dpg.delete_item(simArea)
+        with dpg.drawlist(width=920, height=920, tag="simArea", parent=gridWin) as simArea:
+            dpg.draw_rectangle((10, 10), (910, 910), color=(255, 255, 255))
+            dpg.draw_rectangle((aliveStartX+10, aliveStartY+10), (aliveEndX+10, aliveEndY+10), color=(0, 255, 0), fill=(0, 255, 0, 20), parent=simArea)
+            for i, line in enumerate(grid):
+                for j, index in enumerate(line):
+                    if grid[i][j] == "w":
+                        dpg.draw_rectangle((10 + j * 20, 10 + i * 20), (20 + j * 20, 20 + i * 20), color=(0, 0, 0), fill=(50, 50, 50), parent=simArea)
+                    elif grid[i][j] != 0:
+                        dpg.draw_circle((20 + j * 20, 20 + i * 20), 10, color=(0, 0, 0, 0), fill=index.color, parent=simArea)
+            showIds()
 
 def showIds():
     global simArea
@@ -66,8 +69,18 @@ def readConnection(gene):
         weight *= -1
     return sourceType, sourceId, sinkType, sinkId, weight
 
-def gen50():
-    for i in range(50):
+def genSkip():
+    global skip
+    skip = True
+    skipFor = int(dpg.get_value(gensForSkip))
+    for i in range(skipFor):
+        playGeneration()
+        nextGeneration()
+    skip = False            
+
+def fastGens():
+    skipFor = int(dpg.get_value(gensForSkip))
+    for i in range(skipFor):
         playGeneration()
         nextGeneration()
 
@@ -91,15 +104,13 @@ def generateBrains():
                         if sinkType == "action":
                             dpg.add_text(actionList[sinkId].name + " " + str(weight))
 
-
-
-
-
 def nextGeneration():
-    global creatures, genNum, grid, currStep
+    global creatures, genNum, grid, currStep, killCount
     if currStep < steps:
         return
     currStep = 0
+    #print(killCount)
+    killCount = 0
     genNum += 1
     dpg.set_value(generationText, "Generation: " + str(genNum))
     alive = []
@@ -108,6 +119,11 @@ def nextGeneration():
             alive.append(i)
     creatures.clear()
     positions = []
+    if genNum >= 0:
+        for i in range(5, 10):
+            positions.append([i, 5])
+            grid[5][i] = "w"
+    
     for i, cre in enumerate(alive):
         cre.color = (255, 0, 0)
         pos = [random.randrange(0, gridX), random.randrange(0, gridY)]
@@ -208,9 +224,10 @@ def step():
         creature.stepAction = actionList[action[1]].computation
 
     for creature in creatures:
-        grid[creature.pos[1]][creature.pos[0]] = 0
-        creature.stepAction(creature)
-        grid[creature.pos[1]][creature.pos[0]] = creature
+        if not creature.dead:
+            grid[creature.pos[1]][creature.pos[0]] = 0
+            creature.stepAction(creature)
+            grid[creature.pos[1]][creature.pos[0]] = creature
 
     currStep += 1
     updateGrid()
@@ -240,6 +257,26 @@ def hasCoat(creature):
     else:
         return 0
 
+def creatureForward(creature):
+    direction = creature.facing
+    if direction == "north":
+        for i in range(1, 4):
+            if creature.pos[1] - i < 0 or grid[creature.pos[1] - i][creature.pos[0]]:
+                return i / 4
+    elif direction == "south":
+        for i in range(1, 4):
+            if creature.pos[1] + i >= gridY or grid[creature.pos[1] + i][creature.pos[0]]:
+                return i / 4
+    elif direction == "east":
+        for i in range(1, 4):
+            if creature.pos[0] + i >= gridX or grid[creature.pos[1]][creature.pos[0] + i]:
+                return i / 4
+    elif direction == "west":
+        for i in range(1, 4):
+            if creature.pos[0] - i < 0 or grid[creature.pos[1]][creature.pos[0] - i]:
+                return i / 4
+    return 0
+
 # internal neuron functions
 def internalCalculation(inputs):
     return math.tanh(sum(inputs))
@@ -251,18 +288,22 @@ def defaultAction(*args):
 def moveUp(creature):
     if creature.pos[1] > 0 and not grid[creature.pos[1] - 1][creature.pos[0]]:
         creature.pos[1] -= 1
+        creature.facing = "north"
 
 def moveDown(creature):
     if creature.pos[1] < gridY - 1 and not grid[creature.pos[1] + 1][creature.pos[0]]:
         creature.pos[1] += 1
+        creature.facing = "south"
 
 def moveLeft(creature):
     if creature.pos[0] > 0 and not grid[creature.pos[1]][creature.pos[0] - 1]:
         creature.pos[0] -= 1
+        creature.facing = "west"
 
 def moveRight(creature):
     if creature.pos[0] < gridX - 1 and not grid[creature.pos[1]][creature.pos[0] + 1]:
         creature.pos[0] += 1
+        creature.facing = "east"
 
 def moveRandom(creature):
     direction = random.choice(["up", "down", "left", "right"])
@@ -289,6 +330,53 @@ def makeCoat(creature):
     creature.coat = True
     creature.color = (0, 0, 255)
 
+def followCreature(creature):
+    pass
+
+def goForward(creature):
+    if creature.facing == "north":
+        moveUp(creature)
+    elif creature.facing == "south":
+        moveDown(creature)
+    elif creature.facing == "east":
+        moveRight(creature)
+    elif creature.facing == "west":
+        moveLeft(creature)
+
+def kill(creature): # does not work rn
+    global killCount
+    direction = creature.facing
+    if direction == "north":
+        if creature.pos[1] > 0:
+            if type(grid[creature.pos[1] - 1][creature.pos[0]]) == Creature:
+                deadId = grid[creature.pos[1] - 1][creature.pos[0]].cId
+                grid[creature.pos[1] - 1][creature.pos[0]] = 0
+                killCount += 1
+
+    elif direction == "south":
+        if creature.pos[1] < gridY - 1:
+            if type(grid[creature.pos[1] + 1][creature.pos[0]]) == Creature:
+                deadId = grid[creature.pos[1] + 1][creature.pos[0]].cId
+                grid[creature.pos[1] + 1][creature.pos[0]] = 0
+                killCount += 1
+
+    elif direction == "east":
+        if creature.pos[0] < gridX - 1:
+            if type(grid[creature.pos[1]][creature.pos[0] + 1]) == Creature:
+                deadId = grid[creature.pos[1]][creature.pos[0] + 1].cId
+                grid[creature.pos[1]][creature.pos[0] + 1] = 0
+                killCount += 1
+
+    elif direction == "west":
+        if creature.pos[0] > 0:
+            if type(grid[creature.pos[1]][creature.pos[0] - 1]) == Creature:
+                deadId = grid[creature.pos[1]][creature.pos[0] - 1].cId
+                grid[creature.pos[1]][creature.pos[0] - 1] = 0
+                killCount += 1
+
+
+
+
 global sensoryList, internalList, actionList
 # sensory neurons
 sensoryList = []
@@ -299,6 +387,7 @@ sensoryList.append(Neuron("South", "DiS", southDistance, "sensory", 4))
 sensoryList.append(Neuron("East", "DiE", eastDistance, "sensory", 5))
 sensoryList.append(Neuron("West", "DiW", westDistance, "sensory", 6))
 sensoryList.append(Neuron("Coat", "Ct", hasCoat, "sensory", 7))
+sensoryList.append(Neuron("Forward", "Fw", creatureForward, "sensory", 8))
 
 # internal neuron
 internalList = []
@@ -315,7 +404,10 @@ actionList.append(Neuron("Left", "ML", moveLeft, "action", 3))
 actionList.append(Neuron("Right", "MR", moveRight, "action", 4))
 actionList.append(Neuron("Random", "MRn", moveRandom, "action", 5))
 actionList.append(Neuron("Coat", "MCo", makeCoat, "action", 6))
-actionList.append(Neuron("Away", "AFW", awayFromWall, "action", 7))
+#actionList.append(Neuron("Away", "AFW", awayFromWall, "action", 7))
+actionList.append(Neuron("Follow", "Fol", followCreature, "action", 8))
+actionList.append(Neuron("Forward", "Fw", goForward, "action", 9))
+#actionList.append(Neuron("Kill", "Kll", kill, "action", 10))
 
 global gridX, gridY, numCreatures, numOfConnections, creatures, grid, steps, currStep, genNum, mutation
 gridX = 45
@@ -323,11 +415,17 @@ gridY = 45
 numCreatures = 100
 numOfConnections = 10
 creatures = []
-mutation = 50
+mutation = 20
+
+global skip
+skip = False
 
 if gridX * gridY < numCreatures:
     print("Too many creatures for the grid")
     exit()
+
+global killCount
+killCount = 0
 
 grid = []
 steps = 300
@@ -335,10 +433,10 @@ currStep = 0
 genNum = 1
 
 global aliveStartX, aliveStartY, aliveEndX, aliveEndY
-aliveStartX = 600
-aliveStartY = 600
-aliveEndX = 900
-aliveEndY = 900
+aliveStartX = 200
+aliveStartY = 200
+aliveEndX = 460
+aliveEndY = 460
 
 for i in range(gridY):
     column = []
@@ -347,6 +445,9 @@ for i in range(gridY):
     grid.append(column)
 
 positions = []
+for i in range(5, 10):
+    positions.append([i, 5])
+    grid[5][i] = "w"
 for i in range(numCreatures):
     genes = []
     for j in range(numOfConnections):
@@ -376,8 +477,10 @@ with dpg.window(label='Grid', width=1000, height=1000) as gridWin:
     dpg.add_button(label="Step", callback=step)
     dpg.add_button(label="Play", callback=playGeneration, pos=(50, 50))
     dpg.add_button(label="Next Gen", callback=nextGeneration, pos=(92, 50))
-    dpg.add_button(label="50", callback=gen50, pos=(200, 50))
-    showIdsCb = dpg.add_checkbox(label="Show ids", default_value=False, pos=(300, 50))
+    dpg.add_button(label="Skip", callback=genSkip, pos=(200, 50))
+    dpg.add_button(label="Fast", callback=fastGens, pos=(500, 50))
+    gensForSkip = dpg.add_input_text(default_value=50, pos=(250, 50), width=50)
+    showIdsCb = dpg.add_checkbox(label="Show ids", default_value=False, pos=(310, 50))
     dpg.add_button(label="Brains", callback=generateBrains, pos=(400, 50))
 
         
