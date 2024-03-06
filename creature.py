@@ -12,6 +12,7 @@ class Creature:
         self.eliminated = False
         self.coat = False
         self.color = (255, 0, 0)
+        self.facing = None
     
     def __str__(self):
         return "1"
