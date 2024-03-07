@@ -465,13 +465,13 @@ actionList.append(Neuron("Forward", "Fw", goForward, "action", 9))
 global gridX, gridY, numCreatures, numOfConnections, creatures, grid, steps, currStep, genNum, mutation, buildWall, wallLenght, wallGeneration, wallStart, wallDistance
 gridX = 45
 gridY = 45
-numCreatures = 100
-numOfConnections = 10
+numCreatures = 50
+numOfConnections = 6
 creatures = []
 mutation = 20
 buildWall = True
 wallLenght = 25
-wallGeneration = 51
+wallGeneration = 21
 wallStart = 10
 wallDistance = 10
 
@@ -491,10 +491,10 @@ currStep = 0
 genNum = 1
 
 global aliveStartX, aliveStartY, aliveEndX, aliveEndY
-aliveStartX = 0
-aliveStartY = 0
-aliveEndX = 180
-aliveEndY = 900
+aliveStartX = 220
+aliveStartY = 200
+aliveEndX = 900
+aliveEndY = 700
 
 for i in range(gridY):
     column = []

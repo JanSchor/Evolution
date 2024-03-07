@@ -13,9 +13,22 @@ class Creature:
         self.coat = False
         self.color = (255, 0, 0)
         self.facing = None
+        self.temperature = 0
     
     def __str__(self):
         return "1"
+    
+    def isInCold(self):
+        self.temperature -= 0.05
+        if self.temperature < -1:
+            pass
+
+
+    def isHot(self):
+        self.temperature += 0.05
+        if self.temperature > 1:
+            pass
+
 
 
     
