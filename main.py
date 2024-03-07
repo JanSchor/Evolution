@@ -29,7 +29,7 @@ def updateGrid():
             for i, line in enumerate(grid):
                 for j, index in enumerate(line):
                     if grid[i][j] == "w":
-                        dpg.draw_rectangle((10 + j * 20, 10 + i * 20), (20 + j * 20, 20 + i * 20), color=(0, 0, 0), fill=(50, 50, 50), parent=simArea)
+                        dpg.draw_rectangle((10 + j * 20, 10 + i * 20), (20 + j * 20 + 10, 20 + i * 20 + 10), color=(0, 0, 0, 0), fill=(150, 150, 150), parent=simArea)
                     elif grid[i][j] != 0:
                         dpg.draw_circle((20 + j * 20, 20 + i * 20), 10, color=(0, 0, 0, 0), fill=index.color, parent=simArea)
             showIds()
@@ -119,10 +119,11 @@ def nextGeneration():
             alive.append(i)
     creatures.clear()
     positions = []
-    if genNum >= 0:
-        for i in range(5, 10):
-            positions.append([i, 5])
-            grid[5][i] = "w"
+    if genNum >= wallGeneration:
+        if buildWall:
+            for i in range(wallStart, wallStart + wallLenght):
+                positions.append([wallDistance, i])
+                grid[i][wallDistance] = "w"
     
     for i, cre in enumerate(alive):
         cre.color = (255, 0, 0)
@@ -158,6 +159,11 @@ def nextGeneration():
         for j in range(gridX):
             column.append(0)
         grid.append(column)
+    if genNum >= wallGeneration:
+        if buildWall:
+            for i in range(wallStart, wallStart + wallLenght):
+                positions.append([wallDistance, i])
+                grid[i][wallDistance] = "w"
     for i in creatures:
         grid[i.pos[1]][i.pos[0]] = i
     updateGrid()
@@ -456,13 +462,18 @@ actionList.append(Neuron("Follow", "Fol", followCreature, "action", 8))
 actionList.append(Neuron("Forward", "Fw", goForward, "action", 9))
 #actionList.append(Neuron("Kill", "Kll", kill, "action", 10))
 
-global gridX, gridY, numCreatures, numOfConnections, creatures, grid, steps, currStep, genNum, mutation
+global gridX, gridY, numCreatures, numOfConnections, creatures, grid, steps, currStep, genNum, mutation, buildWall, wallLenght, wallGeneration, wallStart, wallDistance
 gridX = 45
 gridY = 45
 numCreatures = 100
 numOfConnections = 10
 creatures = []
 mutation = 20
+buildWall = True
+wallLenght = 25
+wallGeneration = 51
+wallStart = 10
+wallDistance = 10
 
 global skip
 skip = False
@@ -480,10 +491,10 @@ currStep = 0
 genNum = 1
 
 global aliveStartX, aliveStartY, aliveEndX, aliveEndY
-aliveStartX = 200
-aliveStartY = 200
-aliveEndX = 460
-aliveEndY = 460
+aliveStartX = 0
+aliveStartY = 0
+aliveEndX = 180
+aliveEndY = 900
 
 for i in range(gridY):
     column = []
@@ -492,9 +503,11 @@ for i in range(gridY):
     grid.append(column)
 
 positions = []
-for i in range(5, 10):
-    positions.append([i, 5])
-    grid[5][i] = "w"
+if genNum >= wallGeneration:
+    if buildWall:
+        for i in range(wallStart, wallStart + wallLenght):
+            positions.append([wallDistance, i])
+            grid[i][wallDistance] = "w"
 for i in range(numCreatures):
     genes = []
     for j in range(numOfConnections):
@@ -529,7 +542,7 @@ with dpg.window(label='Grid', width=1000, height=1000) as gridWin:
     gensForSkip = dpg.add_input_text(default_value=50, pos=(250, 50), width=50)
     showIdsCb = dpg.add_checkbox(label="Show ids", default_value=False, pos=(310, 50))
     dpg.add_button(label="Brains", callback=generateBrains, pos=(400, 50))
-    dpg.add_button(label="Genes Graph", callback=genesGraph, pos=(500, 50))
+    dpg.add_button(label="Genes Graph", callback=genesGraph, pos=(550, 50))
 
         
 
