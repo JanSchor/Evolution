@@ -242,22 +242,53 @@ def showGenes(sender, app_data, user_data):
         encryptedGenomes.append(readConnection(gene))
 
     #NODE EDITOR
-    with dpg.node_editor(label="Genes", tag="nGenes", parent="wGenesGraph", width=500, height=500):
+    with dpg.node_editor(label="Genes", tag="nGenes", parent="wGenesGraph", width=1000, height=800):
         #Create nodes for each gene
-        for i, gene in enumerate(encryptedGenomes):
-            print(encryptedGenomes[0])
-            #First neuron
-            with dpg.node(label=gene[0], pos=(0, 0)):
-                with dpg.node_attribute(label="Neuron",attribute_type=dpg.mvNode_Attr_Output,tag="nOutput"+str(i)):
-                    dpg.add_text("Id "+ str(gene[1]))
-                    dpg.add_text("Weight "+ str(gene[4]))
-            #Second neuron
-            with dpg.node(label=encryptedGenomes[0][2], pos=(120, 100)):
-                with dpg.node_attribute(label="Neuron",attribute_type=dpg.mvNode_Attr_Input,tag="nInput"+str(i)):
-                    dpg.add_text("Id "+ str(gene[3]))
-                    dpg.add_text("Weight "+ str(gene[4]))
-            #Link
-            dpg.add_node_link("nOutput"+str(i), "nInput"+str(i))
+        neurons = {}
+        for gene in encryptedGenomes:
+
+            #Variables
+            n1 = gene[0]
+            n2 = gene[2]
+            w = gene[4]
+            n1Id = gene[1]
+            n2Id = gene[3]
+
+            
+            neuron = (n1, n1Id)
+            if neuron not in neurons.keys():
+                neurons[neuron] = [0, 1]
+            else:
+                neurons[neuron][1] += 1
+            neuron = (n2, n2Id)
+            if neuron not in neurons.keys():
+                neurons[neuron] = [1, 0]
+            else:
+                neurons[neuron][0] += 1
+        
+        for i, displayNeuron in enumerate(neurons.keys()):
+            with dpg.node(label=f"{displayNeuron[1]} {displayNeuron[0]}", pos=(0, 0)):
+                for i in range(neurons[displayNeuron][0]):
+                    with dpg.node_attribute(label="Input",attribute_type=dpg.mvNode_Attr_Input, tag=f"input_{displayNeuron[1]}_{displayNeuron[0]}_{str(i)}"):
+                        dpg.add_text("Input")
+                for i in range(neurons[displayNeuron][1]):
+                    with dpg.node_attribute(label="Output",attribute_type=dpg.mvNode_Attr_Output, tag=f"output_{displayNeuron[1]}_{displayNeuron[0]}_{str(i)}"):
+                        dpg.add_text("Output", tag=f"label_{displayNeuron[1]}_{displayNeuron[0]}_{str(i)}")
+
+        #Connections between neurons
+        for gene in encryptedGenomes:
+            n1 = gene[0]
+            n2 = gene[2]
+            w = gene[4]
+            n1Id = gene[1]
+            n2Id = gene[3]
+            dpg.add_node_link(f"output_{n1Id}_{n1}_{str(neurons[(n1, n1Id)][1]-1)}", f"input_{n2Id}_{n2}_{str(neurons[(n2, n2Id)][0]-1)}")
+            dpg.set_value(f"label_{n1Id}_{n1}_{str(neurons[(n1, n1Id)][1]-1)}", f"Weight: {w}")
+            neurons[(n1, n1Id)][1] -= 1
+            neurons[(n2, n2Id)][0] -= 1
+                    
+            
+
 
 
 def genesGraph():
