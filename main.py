@@ -5,6 +5,7 @@ import random
 from creature import Creature
 from neuron import Neuron
 import math
+import time
 
 
 
@@ -26,6 +27,7 @@ def updateGrid():
         with dpg.drawlist(width=920, height=920, tag="simArea", parent=gridWin) as simArea:
             dpg.draw_rectangle((10, 10), (910, 910), color=(255, 255, 255))
             dpg.draw_rectangle((aliveStartX+10, aliveStartY+10), (aliveEndX+10, aliveEndY+10), color=(0, 255, 0), fill=(0, 255, 0, 20), parent=simArea)
+            dpg.draw_rectangle((coldAliveStartX+10, coldAliveStartY+10), (coldAliveEndX+10, coldAliveEndY+10), color=(0, 0, 255), fill=(0, 0, 255, 20), parent=simArea)
             for i, line in enumerate(grid):
                 for j, index in enumerate(line):
                     if grid[i][j] == "w":
@@ -177,6 +179,8 @@ def playGeneration():
     for i in creatures:
         if i.pos[0] >= aliveStartX/20 and i.pos[0] < aliveEndX/20 and i.pos[1] >= aliveStartY/20 and i.pos[1] < aliveEndY/20:
             i.color = (0, 255, 0)
+        elif (i.pos[0] >= coldAliveStartX/20 and i.pos[0] < coldAliveEndX/20 and i.pos[1] >= coldAliveStartY/20 and i.pos[1] < coldAliveEndY/20) and i.coat:
+            i.color = (0, 255, 255)
         else:
             i.color = (255, 255, 0)
             i.eliminated = True
@@ -236,6 +240,7 @@ def step():
             grid[creature.pos[1]][creature.pos[0]] = creature
 
     currStep += 1
+    time.sleep(0.01)
     updateGrid()
 
 def showGenes(sender, app_data, user_data):
@@ -496,10 +501,10 @@ actionList.append(Neuron("Forward", "Fw", goForward, "action", 9))
 global gridX, gridY, numCreatures, numOfConnections, creatures, grid, steps, currStep, genNum, mutation, buildWall, wallLenght, wallGeneration, wallStart, wallDistance
 gridX = 45
 gridY = 45
-numCreatures = 20
-numOfConnections = 100
+numCreatures = 100
+numOfConnections = 6
 creatures = []
-mutation = 20
+mutation = 15
 buildWall = False
 wallLenght = 25
 wallGeneration = 21
@@ -517,15 +522,22 @@ global killCount
 killCount = 0
 
 grid = []
-steps = 300
+steps = 250
 currStep = 0
 genNum = 1
 
 global aliveStartX, aliveStartY, aliveEndX, aliveEndY
-aliveStartX = 200
-aliveStartY = 200
-aliveEndX = 700
-aliveEndY = 700
+aliveStartX = 0
+aliveStartY = 0
+aliveEndX = 300
+aliveEndY = 300
+
+coldAliveStartX = 0
+coldAliveStartY = 0
+#coldAliveEndX = 900
+#coldAliveEndY = 40
+coldAliveEndX = 0
+coldAliveEndY = 0
 
 for i in range(gridY):
     column = []
@@ -553,7 +565,7 @@ for i in creatures:
 
 
 dpg.create_context()
-dpg.create_viewport(title='Custom Title', width=1000, height=700)
+dpg.create_viewport(title='Evolution', width=1000, height=700)
 
 with dpg.window(label='Grid', width=1000, height=1000) as gridWin:
 
