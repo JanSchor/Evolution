@@ -5,7 +5,7 @@ Small simulation of evolution based on neural networks. Inspired by [video](http
 
 I decided to go public with this project, but it is discontinued.
 The slowness of python is very visible here, since it contains a lot of computation.
-I am trying to create similar project in c as can be seen here: [EVO-sim2](https://github.com/Waaatzon/EVO-sim2)
+I am trying to create similar project in c as can be seen here: [EVO-sim2](https://github.com/JanSchor/EVO-sim2)
 
 ## How does it work?
 
@@ -93,7 +93,7 @@ I hope I will get to it in the new project.
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/Waaatzon/EVO-sim2.git
+    git clone https://github.com/JanSchor/Evolution.git
     ```
 
 2. **Install dependencies**:
